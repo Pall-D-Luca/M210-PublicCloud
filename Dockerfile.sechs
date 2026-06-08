@@ -1,8 +1,6 @@
 
-FROM nginx:alpine
+FROM nginxinc/nginx-unprivileged
  
 COPY pong.html /usr/share/nginx/html/index.html
- 
-EXPOSE 80
  
 CMD ["nginx", "-g", "daemon off;"]
