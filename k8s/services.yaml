@@ -1,0 +1,31 @@
+# PostgreSQL Service
+kind: Service
+apiVersion: v1
+metadata:
+  name: postgres
+  labels:
+    app: html-openshift-app-database
+    app.kubernetes.io/part-of: html-openshift-app-database
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: postgres
+---
+# Frontend Service
+kind: Service
+apiVersion: v1
+metadata:
+  name: html-openshift-app-database
+  labels:
+    app: html-openshift-app-database
+    app.kubernetes.io/part-of: html-openshift-app-database
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: html-openshift-app-database
