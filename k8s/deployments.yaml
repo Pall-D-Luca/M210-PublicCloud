@@ -1,11 +1,11 @@
-# PostgreSQL Deployment
+# PostgreSQL
 kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: postgres
   labels:
-    app: html-openshift-app-database
-    app.kubernetes.io/part-of: html-openshift-app-database
+    app: html-openshift-app-light
+    app.kubernetes.io/part-of: html-openshift-app-light
 spec:
   replicas: 1
   selector:
@@ -18,48 +18,61 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: postgres:15
+        image: registry.redhat.io/rhel9/postgresql-15:latest
         ports:
         - containerPort: 5432
-        envFrom:
-        - secretRef:
-            name: postgres-secret
+        env:
+        - name: POSTGRESQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_USER
+        - name: POSTGRESQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRESQL_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_DB
         volumeMounts:
         - name: postgres-storage
-          mountPath: /var/lib/postgresql/data
+          mountPath: /var/lib/pgsql/data
         resources:
           requests:
+            cpu: "10m"
+            memory: "200Mi"
+          limits:
             cpu: "100m"
             memory: "256Mi"
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
       volumes:
       - name: postgres-storage
         persistentVolumeClaim:
           claimName: postgres-pvc
 ---
-# Frontend Deployment
+# Frontend
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: html-openshift-app-database
+  name: html-openshift-app-light
   labels:
-    app: html-openshift-app-database
-    app.kubernetes.io/part-of: html-openshift-app-database
+    app: html-openshift-app-light
+    app.kubernetes.io/part-of: html-openshift-app-light
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: html-openshift-app-database
+      app: html-openshift-app-light
   template:
     metadata:
       labels:
-        app: html-openshift-app-database
+        app: html-openshift-app-light
     spec:
       containers:
-      - name: html-openshift-app-database
-        image: ghcr.io/<Github-Username>/html-openshift-app-database:v1
+      - name: html-openshift-app-light
+        image: ghcr.io/pall-d-luca/html-openshift-postgresql-database:v1
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -86,8 +99,8 @@ spec:
               key: POSTGRES_DB
         resources:
           requests:
+            cpu: "10m"
+            memory: "100Mi"
+          limits:
             cpu: "100m"
             memory: "128Mi"
-          limits:
-            cpu: "500m"
-            memory: "256Mi"

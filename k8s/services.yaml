@@ -4,8 +4,8 @@ apiVersion: v1
 metadata:
   name: postgres
   labels:
-    app: html-openshift-app-database
-    app.kubernetes.io/part-of: html-openshift-app-database
+    app: html-openshift-app-light
+    app.kubernetes.io/part-of: html-openshift-app-light
 spec:
   ports:
   - port: 5432
@@ -17,10 +17,10 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: html-openshift-app-database
+  name: html-openshift-app-light
   labels:
-    app: html-openshift-app-database
-    app.kubernetes.io/part-of: html-openshift-app-database
+    app: html-openshift-app-light
+    app.kubernetes.io/part-of: html-openshift-app-light
 spec:
   ports:
     - name: http
@@ -28,4 +28,4 @@ spec:
       port: 8080
       targetPort: 8080
   selector:
-    app: html-openshift-app-database
+    app: html-openshift-app-light

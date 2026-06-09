@@ -1,7 +1,6 @@
 {
-  "name": "html-openshift-app-database",
+  "name": "html-openshift-app-light",
   "version": "1.0.0",
-  "description": "OpenShift App mit PostgreSQL und HPA",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

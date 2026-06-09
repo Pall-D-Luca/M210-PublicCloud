@@ -3,11 +3,11 @@ apiVersion: v1
 metadata:
   name: postgres-pvc
   labels:
-    app: html-openshift-app-database
-    app.kubernetes.io/part-of: html-openshift-app-database
+    app: html-openshift-app-light
+    app.kubernetes.io/part-of: html-openshift-app-light
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi
+      storage: 10Mi
