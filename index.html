@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenShift App – PostgreSQL</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: #333;
+      margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+      color: #888;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 560px;
+      margin-bottom: 1.5rem;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Besuche */
+    .visit-count {
+      font-size: 3rem;
+      font-weight: bold;
+      color: #c00;
+      text-align: center;
+    }
+
+    .visit-label {
+      text-align: center;
+      color: #888;
+      margin-top: 0.25rem;
+    }
+
+    /* Nachrichten */
+    .input-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .input-row input {
+      flex: 1;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+
+    .input-row input:focus {
+      outline: none;
+      border-color: #c00;
+    }
+
+    .btn {
+      padding: 0.6rem 1.2rem;
+      background: #c00;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    .btn:hover { background: #a00; }
+
+    .message-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .message-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      font-size: 0.9rem;
+    }
+
+    .message-list li span { color: #333; }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .delete-btn:hover { color: #c00; }
+
+    .empty {
+      text-align: center;
+      color: #aaa;
+      font-size: 0.9rem;
+      padding: 1rem 0;
+    }
+
+    /* Status */
+    .status {
+      font-size: 0.8rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 20px;
+      display: inline-block;
+    }
+
+    .status.ok       { background: #e6f4ea; color: #2e7d32; }
+    .status.error    { background: #fdecea; color: #c62828; }
+    .status.checking { background: #fff3e0; color: #e65100; }
+  </style>
+</head>
+<body>
+
+  <h1>OpenShift App</h1>
+  <p class="subtitle">PostgreSQL + HPA Demo</p>
+
+  <!-- Besuchszähler -->
+  <div class="card">
+    <h2>Seitenbesuche</h2>
+    <div class="visit-count" id="visitCount">–</div>
+    <div class="visit-label">Besuche insgesamt</div>
+  </div>
+
+  <!-- Nachrichten -->
+  <div class="card">
+    <h2>Nachrichten</h2>
+    <div class="input-row">
+      <input type="text" id="msgInput" placeholder="Nachricht eingeben..." />
+      <button class="btn" onclick="addMessage()">Senden</button>
+    </div>
+    <ul class="message-list" id="messageList">
+      <li class="empty">Lade Nachrichten...</li>
+    </ul>
+  </div>
+
+  <!-- DB Status -->
+  <div class="card">
+    <h2>Datenbankstatus</h2>
+    <span class="status checking" id="dbStatus">Prüfe Verbindung...</span>
+  </div>
+
+  <script>
+    // Besuche laden
+    async function loadVisits() {
+      try {
+        const res = await fetch('/api/visits');
+        const data = await res.json();
+        document.getElementById('visitCount').textContent = data.visits;
+      } catch {
+        document.getElementById('visitCount').textContent = '–';
+      }
+    }
+
+    // Nachrichten laden
+    async function loadMessages() {
+      try {
+        const res = await fetch('/api/messages');
+        const messages = await res.json();
+        const list = document.getElementById('messageList');
+
+        if (messages.length === 0) {
+          list.innerHTML = '<li class="empty">Noch keine Nachrichten</li>';
+          return;
+        }
+
+        list.innerHTML = messages.map(m => `
+          <li>
+            <span>${escapeHtml(m.text)}</span>
+            <button class="delete-btn" onclick="deleteMessage(${m.id})">✕</button>
+          </li>
+        `).join('');
+      } catch {
+        document.getElementById('messageList').innerHTML =
+          '<li class="empty">Fehler beim Laden</li>';
+      }
+    }
+
+    // Nachricht hinzufügen
+    async function addMessage() {
+      const input = document.getElementById('msgInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      try {
+        await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        input.value = '';
+        loadMessages();
+      } catch {
+        alert('Fehler beim Senden');
+      }
+    }
+
+    // Nachricht löschen
+    async function deleteMessage(id) {
+      try {
+        await fetch(`/api/messages/${id}`, { method: 'DELETE' });
+        loadMessages();
+      } catch {
+        alert('Fehler beim Löschen');
+      }
+    }
+
+    // Health Check
+    async function checkHealth() {
+      const el = document.getElementById('dbStatus');
+      try {
+        const res = await fetch('/health');
+        const data = await res.json();
+        if (data.db === 'connected') {
+          el.textContent = '✅ Datenbank verbunden';
+          el.className = 'status ok';
+        } else {
+          el.textContent = '❌ Datenbank nicht erreichbar';
+          el.className = 'status error';
+        }
+      } catch {
+        el.textContent = '❌ Server nicht erreichbar';
+        el.className = 'status error';
+      }
+    }
+
+    // Enter-Taste für Input
+    document.getElementById('msgInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') addMessage();
+    });
+
+    // HTML escapen
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    // Initialisierung
+    loadVisits();
+    loadMessages();
+    checkHealth();
+
+    // Health Check alle 30 Sekunden
+    setInterval(checkHealth, 30000);
+  </script>
+
+</body>
+</html>
