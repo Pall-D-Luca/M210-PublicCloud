@@ -1,6 +1,0 @@
-
-FROM nginxinc/nginx-unprivileged
- 
-COPY pong.html /usr/share/nginx/html/index.html
- 
-CMD ["nginx", "-g", "daemon off;"]
