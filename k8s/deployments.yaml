@@ -1,0 +1,93 @@
+# PostgreSQL Deployment
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: postgres
+  labels:
+    app: html-openshift-app-database
+    app.kubernetes.io/part-of: html-openshift-app-database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        envFrom:
+        - secretRef:
+            name: postgres-secret
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+---
+# Frontend Deployment
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: html-openshift-app-database
+  labels:
+    app: html-openshift-app-database
+    app.kubernetes.io/part-of: html-openshift-app-database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: html-openshift-app-database
+  template:
+    metadata:
+      labels:
+        app: html-openshift-app-database
+    spec:
+      containers:
+      - name: html-openshift-app-database
+        image: ghcr.io/<Github-Username>/html-openshift-app-database:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        env:
+        - name: DB_HOST
+          value: postgres
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_DB
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
