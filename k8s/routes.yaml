@@ -1,0 +1,16 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: html-openshift-app-database
+  labels:
+    app: html-openshift-app-database
+    app.kubernetes.io/part-of: html-openshift-app-database
+spec:
+  to:
+    kind: Service
+    name: html-openshift-app-database
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
