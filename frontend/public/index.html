@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Space Shooter</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a1a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: 'Courier New', monospace;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    #gameCanvas {
+      border: 2px solid #00ffff;
+      box-shadow: 0 0 20px #00ffff55;
+      background: #0a0a1a;
+    }
+
+    #ui {
+      display: flex;
+      justify-content: space-between;
+      width: 600px;
+      padding: 8px 0;
+      font-size: 16px;
+      color: #00ffff;
+    }
+
+    #overlay {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    #overlay h1 {
+      font-size: 48px;
+      color: #00ffff;
+      text-shadow: 0 0 20px #00ffff;
+      letter-spacing: 4px;
+    }
+
+    #overlay p {
+      font-size: 18px;
+      color: #aaa;
+    }
+
+    #overlay input {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #111;
+      border: 2px solid #00ffff;
+      color: #fff;
+      text-align: center;
+      outline: none;
+      font-family: 'Courier New', monospace;
+    }
+
+    #overlay button {
+      padding: 12px 40px;
+      font-size: 18px;
+      background: transparent;
+      border: 2px solid #00ffff;
+      color: #00ffff;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 2px;
+      transition: all 0.2s;
+    }
+
+    #overlay button:hover {
+      background: #00ffff;
+      color: #0a0a1a;
+    }
+
+    #highscores {
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    #highscores h3 {
+      color: #00ffff;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="ui">
+    <span>SCORE: <span id="score">0</span></span>
+    <span>LEVEL: <span id="level">1</span></span>
+    <span>LIVES: <span id="lives">❤️❤️❤️</span></span>
+  </div>
+
+  <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+  <div id="overlay">
+    <h1>SPACE SHOOTER</h1>
+    <p>Bewege dich mit ← → und schiesse mit LEERTASTE</p>
+    <input id="nameInput" type="text" placeholder="Dein Name" maxlength="20" />
+    <button id="startBtn">SPIELEN</button>
+    <div id="highscores"></div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
