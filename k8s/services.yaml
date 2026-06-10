@@ -1,0 +1,50 @@
+# ============================================================
+# POSTGRES SERVICE
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: 264439-zli-lpallagi           # z.B. 264439-zli-lpallagi
+  labels:
+    app: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+# ============================================================
+# BACKEND SERVICE (nur intern erreichbar)
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: space-shooter-backend         # z.B. myapp-backend
+  namespace: 264439-zli-lpallagi
+  labels:
+    app: space-shooter-backend
+spec:
+  selector:
+    app: space-shooter-backend
+  ports:
+    - port: 8080         # z.B. 8080
+      targetPort: 8080
+---
+# ============================================================
+# FRONTEND SERVICE
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: space-shooter-frontend        # z.B. myapp-frontend
+  namespace: 264439-zli-lpallagi
+  labels:
+    app: space-shooter-frontend
+spec:
+  selector:
+    app: space-shooter-frontend
+  ports:
+    - port: 3000       # z.B. 3000
+      targetPort: 3000

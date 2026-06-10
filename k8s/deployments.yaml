@@ -1,0 +1,174 @@
+# ============================================================
+# POSTGRES DEPLOYMENT
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: 264439-zli-lpallagi           # z.B. 264439-zli-lpallagi
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: space-shooter-db-secret
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: space-shooter-db-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: space-shooter-db-secret
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data  #Roter Punkt zwischen PVC und Deployment
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "<DB_USER>", "-d", "<DB_NAME>"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: space-shooter-pvc
+---
+# ============================================================
+# BACKEND DEPLOYMENT
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: space-shooter-backend         # z.B. myapp-backend
+  namespace: 264439-zli-lpallagi
+  labels:
+    app: space-shooter-backend
+spec:
+  replicas: 2             # z.B. 2 Bei Frontend und Backend
+  selector:
+    matchLabels:
+      app: space-shooter-backend
+  template:
+    metadata:
+      labels:
+        app: space-shooter-backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backend
+          image: ghcr.io/pall-d-luca/space-shooter-backend:v1   # z.B. ghcr.io/username/myapp-backend:v1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080  # z.B. 8080 auch im Backen Dockerfile beschrieben
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: DB_HOST
+              value: postgres
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: space-shooter-db-secret
+                  key: POSTGRES_DB
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: space-shooter-db-secret
+                  key: POSTGRES_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: space-shooter-db-secret
+                  key: POSTGRES_PASSWORD
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+# ============================================================
+# FRONTEND DEPLOYMENT
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: space-shooter-frontend        # z.B. myapp-frontend
+  namespace: 264439-zli-lpallagi      # z.B. 264439-zli-lpallagi
+  labels:
+    app: space-shooter-frontend
+spec:
+  replicas: 2             # z.B. 2 bei Front- und Backend 2
+  selector:
+    matchLabels:
+      app: space-shooter-frontend
+  template:
+    metadata:
+      labels:
+        app: space-shooter-frontend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: frontend
+          image: ghcr.io/pall-d-luca/space-shooter-frontend:v1  # z.B. ghcr.io/username/myapp-frontend:v1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000  # z.B. 3000 auch beim Dockerfile des frontends zu sehen
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: BACKEND_URL
+              value: http://space-shooter-backend:8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 20

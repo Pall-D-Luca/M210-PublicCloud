@@ -1,0 +1,20 @@
+# ============================================================
+# ROUTE (nur Frontend ist öffentlich erreichbar)
+# ============================================================
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: space-shooter-frontend        # z.B. myapp-frontend
+  namespace: 264439-zli-lpallagi           # z.B. 264439-zli-lpallagi
+  labels:
+    app: space-shooter-frontend
+spec:
+  to:
+    kind: Service
+    name: space-shooter-frontend
+  port:
+    targetPort: 3000    # z.B. 3000 auch im Dockerfile des Frontends zu sehen
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+# Hinweis: Backend & Postgres bekommen KEINE Route – nur intern erreichbar!
